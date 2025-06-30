@@ -1,11 +1,11 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 const props = defineProps({
   headers: {
     type: Array,
     required: true,
-    },
+  },
   items: {
     type: Array,
     required: true
@@ -42,6 +42,22 @@ const filteredData = computed(() => {
 
 const emit = defineEmits(['update:page', 'update:items-per-page']);
 
+const sortBy = ref([]);
+
+const sortedItems = computed(() => {
+  if (!sortBy.value.length) return filteredData.value;
+  
+  const [sortItem] = sortBy.value;
+  const key = sortItem.key;
+  const order = sortItem.order === 'desc' ? -1 : 1;
+  
+  return [...filteredData.value].sort((a, b) => {
+    if (a[key] < b[key]) return -1 * order;
+    if (a[key] > b[key]) return 1 * order;
+    return 0;
+  });
+});
+
 const updatePage = (page) => {
   emit('update:page', page);
 }
@@ -54,12 +70,12 @@ const updateItemsPerPage = (itemsPerPage) => {
 <template>
   <v-card>
     <v-data-table-server
-      :items="filteredData"
+      :items="sortedItems"
       :loading="loading"
       :items-length="totalItems"
       :items-per-page="itemsPerPage"
       :page="currentPage"
-      @update:sort-by="console.log('sort')"
+      v-model:sort-by="sortBy"
       @update:page="updatePage"
       @update:items-per-page="updateItemsPerPage"
       class="elevation-1"
